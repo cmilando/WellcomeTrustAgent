@@ -46,10 +46,10 @@ class Person(object):
 
         # initialize
         current_hour = int(0)
-        current_hour_str = str(current_hour)
+        current_zone_hour_str = str(current_hour)
 
         # get zone and AC
-        current_zone = self.time_activity.get(current_hour_str)
+        current_zone = self.time_activity.get(current_zone_hour_str)
 
         if current_zone == 'Home':
             if self.home_has_ac:
@@ -63,26 +63,27 @@ class Person(object):
             exp_prof_dict = exposure_profiles[current_zone].get(this_key[0])
 
         # get the current mean and sd
-        current_temp_mean = exp_prof_dict.get(current_hour_str)[0]
-        current_temp_sd = exp_prof_dict.get(current_hour_str)[1]
+        current_temp_mean = exp_prof_dict.get(current_zone_hour_str)[0]
+        current_temp_sd = exp_prof_dict.get(current_zone_hour_str)[1]
 
         #
         self.temperature_exposure[current_hour] = round(random.gauss(mu=current_temp_mean,
                                                                      sigma=current_temp_sd), 3)
 
+        # print(self.time_activity)
+
         for hour_i in range(1, 24):
 
-            new_hour = str(hour_i)
+            this_hour = str(hour_i)
             # first get new zone
-            if self.time_activity.get(new_hour):
-                current_hour = hour_i
-                current_hour_str = str(hour_i)
+            if self.time_activity.get(this_hour):
+                current_zone_hour_str = str(hour_i)
             else:
-                current_hour = hour_i
-                current_hour_str = current_hour_str
+                current_zone_hour_str = current_zone_hour_str
 
             # get zone and AC
-            current_zone = self.time_activity.get(current_hour_str)
+            current_zone = self.time_activity.get(current_zone_hour_str)
+            # print (new_hour + ' - ' + current_hour_str + ' - ' + current_zone)
 
             if current_zone == 'Home':
                 if self.home_has_ac:
@@ -96,12 +97,12 @@ class Person(object):
                 exp_prof_dict = exposure_profiles[current_zone].get(this_key[0])
 
             # get the current mean and sd
-            current_temp_mean = exp_prof_dict.get(current_hour_str)[0]
-            current_temp_sd = exp_prof_dict.get(current_hour_str)[1]
+            current_temp_mean = exp_prof_dict.get(this_hour)[0]
+            current_temp_sd = exp_prof_dict.get(this_hour)[1]
 
             #
-            self.temperature_exposure[current_hour] = round(random.gauss(mu=current_temp_mean,
-                                                                         sigma=current_temp_sd), 3)
+            self.temperature_exposure[hour_i] = round(random.gauss(mu=current_temp_mean,
+                                                                         sigma=current_temp_sd), 2)
 
 
 # /////////////////////////////////////////////////////////////////////////////
