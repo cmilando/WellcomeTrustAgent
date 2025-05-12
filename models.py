@@ -5,6 +5,8 @@ from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import matplotlib.pyplot as plt
+import pprint as pp
+
 
 # /////////////////////////////////////////////////////////////////////////////
 class Person(object):
@@ -67,8 +69,9 @@ class Person(object):
         current_temp_sd = exp_prof_dict.get(current_zone_hour_str)[1]
 
         #
-        self.temperature_exposure[current_hour] = round(random.gauss(mu=current_temp_mean,
-                                                                     sigma=current_temp_sd), 3)
+        self.temperature_exposure[current_hour] = (
+            round(random.gauss(mu=current_temp_mean,
+                               sigma=current_temp_sd), 3))
 
         # print(self.time_activity)
 
@@ -102,7 +105,7 @@ class Person(object):
 
             #
             self.temperature_exposure[hour_i] = round(random.gauss(mu=current_temp_mean,
-                                                                         sigma=current_temp_sd), 2)
+                                                                   sigma=current_temp_sd), 2)
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -110,23 +113,26 @@ class Population(object):
 
     def __init__(self,
                  n_persons: int,
-                 distribution_dict):
+                 distribution_dict,
+                 n_per_sim_group=200):  # Defaults to 200
+
+        #
+        self.n_persons = n_persons
+
         # get the distribution keys as a float
-        dist_probs = [distribution_dict[s]['percentage'] for s in distribution_dict]
-        dist_names = [s for s in distribution_dict]
-        assert sum(dist_probs) == 1
+        self.dist_probs = [distribution_dict[s]['percentage'] for s in distribution_dict]
+        self.dist_names = [s for s in distribution_dict]
+        assert sum(self.dist_probs) == 1
 
-        # get the distribution choices
-        dist_choices = random.choices(dist_names, weights=dist_probs, k=n_persons)
-
+        # so actually, just get standard error with N_SIM
         # now create your population
         self.Persons = dict()
-        for i in range(0, n_persons):
-            this_dist_choice = distribution_dict[dist_choices[i]]
+        for i in range(0, n_per_sim_group * len(self.dist_names)):
+            this_dist_choice = distribution_dict[self.dist_names[i % len(self.dist_names)]]
             person_id = 'Person' + str(i + 1)
             self.Persons[person_id] = (
                 Person(person_id=i + 1,
-                       profile=dist_choices[i],
+                       profile=self.dist_names[i % len(self.dist_names)],
                        home_has_ac=this_dist_choice['home_has_ac'],
                        time_activity_str=this_dist_choice['time_activity_profile']))
 
@@ -180,3 +186,29 @@ class Population(object):
         plt.tight_layout()
         plt.show()
 
+    def calculate_total_outcomes(self):
+        """
+        Based on the population weights, calculate the overall intervention outcomes
+        :return:
+        """
+
+        # get the distribution choices
+        dist_choices = random.choices(self.dist_names, weights=self.dist_probs, k=self.n_persons)
+
+        # 1. Group temperature_exposures by type
+        exposures_by_type = defaultdict(list)
+
+        for person in self.Persons.values():
+            exposures_by_type[person.profile].append(person.temperature_exposure)
+
+        # 2. Calculate mean and standard error for each hour
+        mean_by_type = {}
+        se_by_type = {}
+
+        for person_type, exposures in exposures_by_type.items():
+            data = np.array(exposures)  # shape: (n_people, 24)
+            mean_by_type[person_type] = data.mean(axis=0)
+            se_by_type[person_type] = data.std(axis=0, ddof=1) / np.sqrt(data.shape[0])
+
+        # so now you have mean_by_type
+        pp.pprint(mean_by_type)

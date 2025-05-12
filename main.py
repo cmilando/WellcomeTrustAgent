@@ -10,15 +10,25 @@ random.seed(10)
 # age group, add a new time-activity profile
 distribution_dict = {
     'Std_no_AC': {
-        'percentage': 0.7,
+        'percentage': 0.25,
         'time_activity_profile': 'Standard - Weekday',
         'home_has_ac': False
     },
     'Std_w_AC': {
-        'percentage': 0.3,
+        'percentage': 0.25,
         'time_activity_profile': 'Standard - Weekday',
         'home_has_ac': True
-    }
+    },
+    'Std_w_AC_Tree': {
+        'percentage': 0.25,
+        'time_activity_profile': 'Standard w/ Trees - Weekday',
+        'home_has_ac': True
+    },
+    'Outdoor_worker': {
+        'percentage': 0.25,
+        'time_activity_profile': 'Outdoor - Weekday',
+        'home_has_ac': True
+    },
 }
 
 # **********************************************************************
@@ -28,7 +38,9 @@ distribution_dict = {
 # **********************************************************************
 
 # initialize the population
-testPop = Population(100, distribution_dict)
+testPop = Population(n_persons=200000,
+                     distribution_dict=distribution_dict,
+                     n_per_sim_group=200)
 # print(testPop)
 
 # then simulate a single day for this population
@@ -42,3 +54,6 @@ testPop.get_population_exposure()
 # now summarize personal exposure in a graph,
 # by distribution type and hour of day
 testPop.summarize_population_exposure()
+
+# now calculate total outcomes for this simulation
+testPop.calculate_total_outcomes()
