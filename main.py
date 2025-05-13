@@ -24,11 +24,16 @@ distribution_dict = {
         'time_activity_profile': 'Standard w/ Trees - Weekday',
         'home_has_ac': True
     },
-    'Outdoor_worker': {
-        'percentage': 0.25,
+    'Outdoor_worker_noAC': {
+        'percentage': 0.125,
         'time_activity_profile': 'Outdoor - Weekday',
         'home_has_ac': False
     },
+    'Outdoor_worker_AC': {
+        'percentage': 0.125,
+        'time_activity_profile': 'Outdoor - Weekday',
+        'home_has_ac': True
+    }
 }
 
 # **********************************************************************
@@ -38,9 +43,10 @@ distribution_dict = {
 # **********************************************************************
 
 # initialize the population
-testPop = Population(n_persons=1000,
+testPop = Population(n_persons=100000,
                      distribution_dict=distribution_dict,
-                     n_per_sim_group=200)
+                     n_per_sim_group=1000)
+print(testPop)
 
 # then simulate a single day for this population
 # I guess you could do uncertainty a couple ways

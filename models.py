@@ -211,7 +211,7 @@ class Population(object):
 
         # multiply the mean by the number of people in each group
         multipliers = dict()
-        for i in range(0, 4):
+        for i in range(0, len(self.dist_names)):
             multipliers[self.dist_names[i]] = self.dist_probs[i] * self.n_persons
 
         # Compute result
