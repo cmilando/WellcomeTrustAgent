@@ -43,35 +43,54 @@ class Person(object):
     # So that it looks nice in lists
     __repr__ = __str__
 
-    # get daily temperature exposure
-    def get_daily_exposure(self):
+    # //////////////////////////////////////////////////////////////////////////
+    def get_hourly_exposure(self, current_zone_hour_str, hour_i):
+        """
 
-        # initialize
-        current_hour = int(0)
-        current_zone_hour_str = str(current_hour)
+        :param current_zone_hour_str: the hour of the last zone change
+        :param hour_i: the hour integer, from 0 to 23
+        :return:
+        """
+        #
+        this_hour = str(hour_i)
 
         # get zone and AC
         current_zone = self.time_activity.get(current_zone_hour_str)
 
+        # if its home, you can choose between AC and no AC
         if current_zone == 'Home':
             if self.home_has_ac:
                 ac_str = 'has_ac'
             else:
                 ac_str = 'no_ac'
+            # this is the hourly lookup
             exp_prof_dict = exposure_profiles[current_zone].get(ac_str)
         else:
+            # other zones should only have a single sublayer
             this_key = list(exposure_profiles[current_zone])
             assert len(this_key) == 1
+            # this is the hourly lookup
             exp_prof_dict = exposure_profiles[current_zone].get(this_key[0])
 
         # get the current mean and sd
-        current_temp_mean = exp_prof_dict.get(current_zone_hour_str)[0]
-        current_temp_sd = exp_prof_dict.get(current_zone_hour_str)[1]
+        current_temp_mean = exp_prof_dict.get(this_hour)[0]
+        current_temp_sd = exp_prof_dict.get(this_hour)[1]
 
         #
-        self.temperature_exposure[current_hour] = (
+        self.temperature_exposure[hour_i] = (
             round(random.gauss(mu=current_temp_mean,
                                sigma=current_temp_sd), 3))
+
+    # //////////////////////////////////////////////////////////////////////////
+    # get daily temperature exposure
+    def get_daily_exposure(self):
+
+        # initialize
+        hour_i = int(0)
+        current_zone_hour_str = str(hour_i)
+
+        #
+        self.get_hourly_exposure(current_zone_hour_str, hour_i)
 
         # print(self.time_activity)
 
@@ -84,28 +103,8 @@ class Person(object):
             else:
                 current_zone_hour_str = current_zone_hour_str
 
-            # get zone and AC
-            current_zone = self.time_activity.get(current_zone_hour_str)
-            # print (new_hour + ' - ' + current_hour_str + ' - ' + current_zone)
-
-            if current_zone == 'Home':
-                if self.home_has_ac:
-                    ac_str = 'has_ac'
-                else:
-                    ac_str = 'no_ac'
-                exp_prof_dict = exposure_profiles[current_zone].get(ac_str)
-            else:
-                this_key = list(exposure_profiles[current_zone])
-                assert len(this_key) == 1
-                exp_prof_dict = exposure_profiles[current_zone].get(this_key[0])
-
-            # get the current mean and sd
-            current_temp_mean = exp_prof_dict.get(this_hour)[0]
-            current_temp_sd = exp_prof_dict.get(this_hour)[1]
-
-            #
-            self.temperature_exposure[hour_i] = round(random.gauss(mu=current_temp_mean,
-                                                                   sigma=current_temp_sd), 2)
+            # then, get the exposure for this hour
+            self.get_hourly_exposure(current_zone_hour_str, hour_i)
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -123,6 +122,9 @@ class Population(object):
         self.dist_probs = [distribution_dict[s]['percentage'] for s in distribution_dict]
         self.dist_names = [s for s in distribution_dict]
         assert sum(self.dist_probs) == 1
+
+        # get the people per group
+        self.n_persons_per_grp = self.n_persons * self.dist_probs
 
         # so actually, just get standard error with N_SIM
         # now create your population
@@ -186,14 +188,11 @@ class Population(object):
         plt.tight_layout()
         plt.show()
 
-    def calculate_total_outcomes(self):
+    def calculate_total_outcomes(self, threshold):
         """
         Based on the population weights, calculate the overall intervention outcomes
         :return:
         """
-
-        # get the distribution choices
-        dist_choices = random.choices(self.dist_names, weights=self.dist_probs, k=self.n_persons)
 
         # 1. Group temperature_exposures by type
         exposures_by_type = defaultdict(list)
@@ -210,5 +209,15 @@ class Population(object):
             mean_by_type[person_type] = data.mean(axis=0)
             se_by_type[person_type] = data.std(axis=0, ddof=1) / np.sqrt(data.shape[0])
 
-        # so now you have mean_by_type
-        pp.pprint(mean_by_type)
+        # multiply the mean by the number of people in each group
+        multipliers = dict()
+        for i in range(0, 4):
+            multipliers[self.dist_names[i]] = self.dist_probs[i] * self.n_persons
+
+        # Compute result
+        results = {}
+        for group, temps in mean_by_type.items():
+            count_above = np.sum(temps > threshold)
+            results[group] = count_above * multipliers[group]
+
+        pp.pprint(results)

@@ -56,4 +56,5 @@ testPop.get_population_exposure()
 testPop.summarize_population_exposure()
 
 # now calculate total outcomes for this simulation
-testPop.calculate_total_outcomes()
+# this is the number of cooling degree hours in each population
+testPop.calculate_total_outcomes(threshold=75)
