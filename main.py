@@ -27,7 +27,7 @@ distribution_dict = {
     'Outdoor_worker': {
         'percentage': 0.25,
         'time_activity_profile': 'Outdoor - Weekday',
-        'home_has_ac': True
+        'home_has_ac': False
     },
 }
 
@@ -38,18 +38,15 @@ distribution_dict = {
 # **********************************************************************
 
 # initialize the population
-testPop = Population(n_persons=200000,
+testPop = Population(n_persons=1000,
                      distribution_dict=distribution_dict,
                      n_per_sim_group=200)
-# print(testPop)
 
 # then simulate a single day for this population
 # I guess you could do uncertainty a couple ways
 # (1) more people (10,000?)
 # (2) a set population (2,000) but then do like 500 days and average
 testPop.get_population_exposure()
-# print(testPop.Persons['Person1'].temperature_exposure)
-# print(testPop.Persons['Person2'].temperature_exposure)
 
 # now summarize personal exposure in a graph,
 # by distribution type and hour of day
